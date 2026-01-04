@@ -24,6 +24,8 @@ class Task(models.Model):
     due_date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='todo')
 
+    def is_overdue(self):
+        return self.due_date and self.due_date < timezone.now().date() and self.status != 'done'
     def __str__(self):
         return self.title
 
