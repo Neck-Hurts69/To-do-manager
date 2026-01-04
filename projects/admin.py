@@ -17,6 +17,9 @@ class TaskAdmin(admin.ModelAdmin):
 
     ordering = ('due_date',)
 
+    def mark_completed(self, request, queryset):
+        queryset.update(is_completed=True)
+    mark_completed.short_description = "Mark selected tasks as completed"
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('team', 'responsible')
