@@ -11,6 +11,12 @@ class Team(models.Model):
         return self.name
 
 class Task(models.Model):
+    STATUS_CHOICES = [
+        ('todo', 'To Do'),
+        ('progress', 'In Progress'),
+        ('done', 'Done'),
+    ]
+
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
