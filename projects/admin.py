@@ -4,18 +4,12 @@ from .models import Task, Team, Project
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = (
-        'title',
-        'team',
-        'responsible',
-        'status',
-        'due_date',
-        'overdue_status',
-    )
+    list_display = ('title','team','responsible',
+                    'status','due_date','overdue_status','is_completed')
     list_filter = ('status','team','due_date',)
     search_fields = ('title','description',)
-
     ordering = ('due_date',)
+    actions = ['mark_completed']
 
     def mark_completed(self, request, queryset):
         queryset.update(is_completed=True)
