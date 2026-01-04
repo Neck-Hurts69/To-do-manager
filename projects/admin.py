@@ -15,6 +15,23 @@ class TaskAdmin(admin.ModelAdmin):
     list_filter = ('status','team','due_date',)
     search_fields = ('title','description',)
 
-admin.site.register(Team)
-admin.site.register(Task)
-admin.site.register(Project)
+    ordering = ('due_date',)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('team', 'responsible')
+    def overdue_status(self, obj):
+        if obj.is_overdue():
+            return format_html('<span style="color:red; font-weight:bold;">Overdue</span>')
+        return format_html('<span style="color:green;">On time</span>')
+
+    overdue_status.short_description = "Deadline status"
+
+@admin.register(Project)
+class ProjectAdmin(admin.ModelAdmin):
+    list_display = ('project_title', 'team', 'start_date')
+    filter_horizontal = ('tasks',)
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ('name', 'team_lead')
