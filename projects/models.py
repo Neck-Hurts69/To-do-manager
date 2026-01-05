@@ -20,6 +20,7 @@ class Task(models.Model):
         ('done', 'Done'),
     ]
 
+    created_at = models.DateTimeField(auto_now_add=True)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)

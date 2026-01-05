@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
+from datetime import datetime
+from django.utils import timezone
 from .models import Task, Project, Team
 
 @admin.register(Task)
@@ -34,7 +36,7 @@ class TaskAdmin(admin.ModelAdmin):
     def task_status(self, obj):
         if obj.is_completed:
             return "✅ Completed"
-        if obj.due_date and obj.due_date < timezone.now():
+        if obj.due_date and obj.due_date < timezone.now().date():
             return "❌ Overdue"
         return "⏳ In progress"
 
