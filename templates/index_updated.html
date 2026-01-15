@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card shadow-lg">
+    <div class="card-body">
+        <h3 class="text-center mb-4">Мои задачи</h3>
+
+        <!-- Форма добавления задачи -->
+        <form method="POST" class="task-form">
+            {% csrf_token %}
+            <input type="text" name="title" class="form-control" placeholder="Напиши новую задачу..." required>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Добавить
+            </button>
+        </form>
+
+        <!-- Список задач -->
+        <ul class="list-group">
+            {% for task in tasks %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="{% if task.is_completed %}task-done{% endif %}">
+                    {{ task.title }}
+                </span>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'complete_task' task.id %}" class="btn btn-sm btn-success" title="Выполнено">
+                        ✓
+                    </a>
+                    <a href="{% url 'delete_task' task.id %}" class="btn btn-sm btn-danger" title="Удалить">
+                        ✕
+                    </a>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-center text-muted">
+                Задач пока нет. Отдыхай! 😎
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
