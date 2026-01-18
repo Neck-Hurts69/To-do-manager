@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-body p-5">
+
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold text-dark">My Tasks</h2>
+                    <p class="text-muted">Project done by the group "Neck Hurts".</p>
+                </div>
+
+                <form method="POST" class="row g-3 mb-5 p-4 bg-light rounded-4 shadow-sm align-items-end position-relative">
+                    {% csrf_token %}
+                    <div class="col-md-6">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Task Title</label>
+                        <input type="text" name="title" class="form-control form-control-lg border-0 shadow-sm" placeholder="Name?" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-uppercase fw-bold text-secondary small">Due Date</label>
+                        <input type="datetime-local" name="due_date" class="form-control form-control-lg border-0 shadow-sm">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm btn-gradient">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="list-group list-group-flush gap-3">
+                    {% for task in tasks %}
+                    <div class="list-group-item border-0 shadow-sm rounded-3 p-3 task-card
+                                {% if task.is_overdue %}overdue-border{% endif %}
+                                {% if task.is_completed %}task-completed-bg{% endif %}">
+
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+
+                            <div class="d-flex flex-column gap-1">
+                                <h5 class="mb-0 fw-semibold {% if task.is_completed %}text-decoration-line-through text-muted{% else %}text-dark{% endif %}">
+                                    {{ task.title }}
+                                </h5>
+
+                                {% if task.due_date %}
+                                    <small class="d-flex align-items-center gap-1 {% if task.is_overdue %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                        <i class="bi bi-clock"></i>
+                                        {{ task.due_date|date:"M d, H:i" }}
+                                        {% if task.is_overdue %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-2 rounded-pill">Overdue</span>
+                                        {% endif %}
+                                    </small>
+                                {% endif %}
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'complete_task' task.id %}"
+                                   class="btn btn-circle {% if task.is_completed %}btn-secondary{% else %}btn-success-soft{% endif %}"
+                                   title="Toggle Status">
+                                    <i class="bi bi-check-lg"></i>
+                                </a>
+                                <a href="{% url 'delete_task' task.id %}"
+                                   class="btn btn-circle btn-danger-soft"
+                                   title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                        <div class="text-center py-5 opacity-50">
+                            <i class="bi bi-clipboard-check display-1 text-muted"></i>
+                            <h5 class="mt-3 text-muted">No tasks. Chill! 😎</h5>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

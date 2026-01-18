@@ -36,8 +36,8 @@ class TaskAdmin(admin.ModelAdmin):
     def task_status(self, obj):
         if obj.is_completed:
             return "✅ Completed"
-        if obj.due_date and obj.due_date < timezone.now().date():
-            return "❌ Overdue"
+        if obj.due_date and obj.due_date < timezone.now():
+            return "❌Overdue"
         return "⏳ In progress"
 
     task_status.short_description = "Status"
