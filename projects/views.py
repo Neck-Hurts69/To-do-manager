@@ -1,24 +1,23 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Task
 from django.utils import timezone
 
+
+@login_required(login_url='/admin/login/')  # Add this decorator
 def task_list(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         title = request.POST.get('title')
         due_date = request.POST.get('due_date')
-        if title:
-            Task.objects.create(
-                title=title,
-                due_date=due_date if due_date else None,
-                responsible=request.user
-            )
+        Task.objects.create(
+            title=title,
+            due_date=due_date,
+            responsible=request.user
+        )
         return redirect('task_list')
-    tasks = Task.objects.all().order_by('is_completed', 'due_date')
-    return render(request, 'index.html', {
-        'tasks': tasks,
-        'current_time': timezone.now()
-    })
+    tasks = Task.objects.all()
+    return render(request, '../templates/index.html', {'tasks': tasks})
 
 def complete_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
