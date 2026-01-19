@@ -67,7 +67,7 @@ To get a local copy up and running, follow these steps.
 
 1.  **Clone the repo**
     ```sh
-    git clone [https://github.com/Neck-Hurts69/To-do-manager.git](https://github.com/Neck-Hurts69/To-do-manager.git)
+    git clone https://github.com/Neck-Hurts69/To-do-manager.git
     ```
 2.  **Run the app**
     ```sh
