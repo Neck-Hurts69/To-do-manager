@@ -69,18 +69,9 @@ To get a local copy up and running, follow these steps.
     ```sh
     git clone [https://github.com/Neck-Hurts69/To-do-manager.git](https://github.com/Neck-Hurts69/To-do-manager.git)
     ```
-2.  **Install packages**
+2.  **Run the app**
     ```sh
-    # Example for Python
-    pip install -r requirements.txt
-    
-    # Example for JS
-    npm install
-    ```
-3.  **Run the app**
-    ```sh
-    # Command to run
-    python main.py
+    python3 manage.py runserver
     ```
 
 ## 💻 Usage
