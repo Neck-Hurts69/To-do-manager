@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.staticfiles',  # ✅ Уже подключено для статики
     'projects',
 ]
 
@@ -55,7 +56,7 @@ ROOT_URLCONF = 'to_do_manager.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -112,11 +113,25 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
+# ============================================
+# STATIC FILES CONFIGURATION (CSS, JavaScript, Images)
+# ============================================
 
+# 1. STATIC_URL - URL-префикс для доступа к статике в браузере
+# Пример: http://localhost:8000/static/css/style.css
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'static'
+
+# 2. STATIC_ROOT - Папка, куда collectstatic соберёт всю статику (для production)
+# Используется командой: python manage.py collectstatic
+# ⚠️ НЕ храни исходники здесь! Только для собранных файлов.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# 3. STATICFILES_DIRS - Папки с исходниками статики (для разработки)
+# Django ищет статику здесь во время DEBUG=True
+# Здесь храним CSS, JS, images для всего проекта
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # Основная папка со статикой проекта
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

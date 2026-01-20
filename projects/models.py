@@ -1,6 +1,7 @@
-from django.conf import settings 
-from django.db import models 
+from django.conf import settings
+from django.db import models
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 class Team(models.Model):
     team_lead = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -13,23 +14,34 @@ class Team(models.Model):
     def __str__(self):
         return self.name
 
+
 class Task(models.Model):
     STATUS_CHOICES = [
         ('todo', 'To Do'),
         ('progress', 'In Progress'),
         ('done', 'Done'),
     ]
-
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    PRIORITY_CHOICES = [
+        (3, 'High'),
+        (2, 'Medium'),
+        (1, 'Low'),
+    ]
+    created_at = models.DateTimeField(auto_now_add=True)
     title = models.CharField(max_length=200)
-    description = models.TextField()
-    due_date = models.DateField(null=True, blank=True)
+    description = models.TextField(blank=True)
+    due_date = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='todo')
+    priority = models.IntegerField(choices=PRIORITY_CHOICES, default=1)
+    responsible = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name='tasks_responsible')
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True, related_name='tasks_team')
     is_completed = models.BooleanField(default=False)
 
     def is_overdue(self):
-        return self.due_date and self.due_date < timezone.now().date() and self.status != 'done'
+        if self.due_date and not self.is_completed:
+            return self.due_date < timezone.now()
+        return False
+
     def __str__(self):
         return self.title
 

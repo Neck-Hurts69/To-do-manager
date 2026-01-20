@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.utils import timezone
 from .models import Team, Task, Project
+from datetime import datetime
+from django.utils import timezone
+from .models import Task, Project, Team
 
 
 @admin.register(Team)
@@ -30,6 +33,12 @@ class TaskAdmin(admin.ModelAdmin):
 
     def overdue_badge(self, obj):
         return "❌ Overdue" if obj.is_overdue() else "—"
+    def task_status(self, obj):
+        if obj.is_completed:
+            return "✅ Completed"
+        if obj.due_date and obj.due_date < timezone.now():
+            return "❌Overdue"
+        return "⏳ In progress"
 
     overdue_badge.short_description = "Overdue?"
 
