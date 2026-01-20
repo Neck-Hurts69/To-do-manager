@@ -15,15 +15,15 @@
 
                 <form method="POST" class="row g-3 mb-5 p-4 bg-light rounded-4 shadow-sm align-items-end position-relative">
                     {% csrf_token %}
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <label class="form-label text-uppercase fw-bold text-secondary small">Task Title</label>
                         <input type="text" name="title" class="form-control form-control-lg border-0 shadow-sm" placeholder="Name?" required>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-12">
                         <label class="form-label text-uppercase fw-bold text-secondary small">Due Date</label>
                         <input type="datetime-local" name="due_date" class="form-control form-control-lg border-0 shadow-sm">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-12">
                         <button type="submit" class="btn btn-primary btn-lg w-100 shadow-sm btn-gradient">
                             <i class="bi bi-plus-lg"></i>
                         </button>
