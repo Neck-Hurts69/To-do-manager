@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 class Team(models.Model):
     team_lead = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
-    members = models.TextField()
+    members = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='member_list')
     due_date = models.DateTimeField(null=True, blank=True)
     is_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
@@ -52,6 +52,27 @@ class Project(models.Model):
     tasks = models.ManyToManyField(Task)
     start_date = models.DateTimeField(blank=True, null=True)
 
+    def start(self):
+        self.start_date = timezone.now()
+        self.save()
+    
+    def __str__(self):
+        return self.project_title
+
+class MultiTeamProject(models.Model):
+    teams = models.ManyToManyField(Team)
+    project_title = models.CharField(max_length=200)
+    description = models.TextField()
+    tasks = models.ManyToManyField(Task)
+    start_date = models.DateTimeField(blank=True, null=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+
+    def is_overdue(self):
+        if self.due_date and not self.is_completed:
+            return self.due_date < timezone.now()
+        return False
+    
     def start(self):
         self.start_date = timezone.now()
         self.save()
