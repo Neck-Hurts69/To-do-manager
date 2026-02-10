@@ -1,8 +1,15 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 
+router = DefaultRouter()
+router.register(r'categories', views.CategoryViewSet)
+router.register(r'teams', views.TeamViewSet)
+router.register(r'tasks', views.TaskViewSet)
+router.register(r'projects', views.ProjectViewSet)
+router.register(r'calendar-events', views.CalendarEventViewSet)
+
 urlpatterns = [
-    path('', views.task_list, name='task_list'),
-    path('complete/<int:task_id>/', views.complete_task, name='complete_task'),
-    path('delete/<int:task_id>/', views.delete_task, name='delete_task'),
+    path('', include(router.urls)),
+    path('dashboard/', views.dashboard_stats, name='dashboard-stats'),
 ]

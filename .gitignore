@@ -1,18 +1,7 @@
-cat > .gitignore << 'EOF'
-*.py[cod]
+node_modules/
 __pycache__/
-*.pyc
-*.pyo
-db.sqlite3
-/staticfiles/
-/media/
 venv/
-env/
-.venv/
 .env
-.idea/
-.vscode/
-.DS_Store
-Thumbs.db
-*.log
-EOF
+db.sqlite3
+*.pyc
+staticfiles/

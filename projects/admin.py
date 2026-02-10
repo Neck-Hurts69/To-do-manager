@@ -1,91 +1,69 @@
 from django.contrib import admin
-from django.utils import timezone
-from .models import Team, Task, Project, MultiTeamProject
-from datetime import datetime
+from django.utils.html import format_html
+from .models import Task, Project, Team, Category, TeamMessage
 
 
-@admin.register(Team)
-class TeamAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "team_lead", "due_date", "is_completed", "created_at", "member_count")
-    search_fields = ("name", "members__username", "team_lead__username", "team_lead__email")
-    list_filter = ("is_completed", "created_at", "due_date", "team_lead")
-    filter_horizontal = ("members",)
-    readonly_fields = ("created_at",)
-    ordering = ("-created_at",)
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'colored_badge', 'task_count', 'created_at')
+    search_fields = ('name',)
 
-    def member_count(self, obj):
-        if not obj.members:
-            return 0
-        return len(obj.members)
+    def colored_badge(self, obj):
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; '
+            'border-radius: 12px;">{}</span>',
+            obj.color, obj.name
+        )
+    colored_badge.short_description = "Badge"
 
-    member_count.short_description = "Members count"
+    def task_count(self, obj):
+        return obj.tasks.count()
+    task_count.short_description = "Tasks"
 
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "team", "responsible", "status", "due_date", "is_completed", "overdue_badge")
-    search_fields = ("title", "description", "team__name", "responsible__username", "responsible__email")
-    list_filter = ("status", "is_completed", "due_date", "team", "responsible")
-    ordering = ("due_date", "status")
-    list_select_related = ("team", "responsible")
-    actions = ("mark_completed", "mark_uncompleted")
-
-    def overdue_badge(self, obj):
-        return "❌ Overdue" if obj.is_overdue() else "—"
-    def task_status(self, obj):
-        if obj.is_completed:
-            return "✅ Completed"
-        if obj.due_date and obj.due_date < timezone.now():
-            return "❌Overdue"
-        return "⏳ In progress"
-
-    overdue_badge.short_description = "Overdue?"
+    list_display = ('title', 'team', 'responsible', 'priority', 'status', 'due_date', 'is_completed')
+    list_filter = ('status', 'priority', 'team', 'is_completed')
+    search_fields = ('title', 'description')
+    actions = ['mark_completed']
 
     def mark_completed(self, request, queryset):
-        queryset.update(is_completed=True, status="done")
-
-    def mark_uncompleted(self, request, queryset):
-        queryset.update(is_completed=False)
-
-    mark_completed.short_description = "Mark selected tasks as completed"
-    mark_uncompleted.short_description = "Mark selected tasks as NOT completed"
+        for task in queryset:
+            task.complete()
+    mark_completed.short_description = "Mark as completed"
 
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("id", "project_title", "team", "start_date", "task_count")
-    search_fields = ("project_title", "description", "team__name", "tasks__title")
-    list_filter = ("start_date", "team")
-    filter_horizontal = ("tasks",)
-    list_select_related = ("team",)
-    ordering = ("-start_date",)
-
-    def task_count(self, obj):
-        return obj.tasks.count()
-
-    task_count.short_description = "Number of tasks"
+    list_display = ('project_title', 'team', 'status', 'deadline')
+    list_filter = ('status', 'team')
+    filter_horizontal = ('tasks',)
 
 
-@admin.register(MultiTeamProject)
-class MTPAdmin(admin.ModelAdmin):
-    list_display = ("id", "project_title", "start_date", "task_count", "due_date", "is_completed", "overdue_badge")
-    search_fields = ("project_title", "description", "teams__name", "tasks__title")
-    list_filter = ("start_date", "teams", "is_completed", "due_date")
-    filter_horizontal = ("tasks", "teams")
-    ordering = ("-start_date", "due_date")
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = ('name', 'team_lead', 'member_count', 'is_active')
+    list_filter = ('is_active',)
+    filter_horizontal = ('members',)
 
-    def task_count(self, obj):
-        return obj.tasks.count()
+    def member_count(self, obj):
+        return obj.members.count()
+    member_count.short_description = "Members"
 
-    task_count.short_description = "Number of tasks"
 
-    def overdue_badge(self, obj):
-        return "❌ Overdue" if obj.is_overdue() else "—"
-    def project_status(self, obj):
-        if obj.is_completed:
-            return "✅ Completed"
-        if obj.due_date and obj.due_date < timezone.now():
-            return "❌Overdue"
-        return "⏳ In progress"
+@admin.register(TeamMessage)
+class TeamMessageAdmin(admin.ModelAdmin):
+    list_display = ('team', 'author', 'short_content', 'created_at')
+    list_filter = ('team', 'created_at')
+    search_fields = ('content', 'author__username', 'team__name')
 
-    overdue_badge.short_description = "Overdue?"
+    def short_content(self, obj):
+        if len(obj.content) <= 80:
+            return obj.content
+        return f"{obj.content[:77]}..."
+    short_content.short_description = "Message"
+
+
+admin.site.site_header = "📋 To Do Manager"
+admin.site.site_title = "To Do Manager Admin"
