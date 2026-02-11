@@ -48,6 +48,14 @@ def _is_team_member(team, user):
     return team.team_lead_id == user.id or team.members.filter(id=user.id).exists()
 
 
+def _user_teams(user):
+    return Team.objects.filter(
+        is_active=True,
+    ).filter(
+        Q(team_lead=user) | Q(members=user)
+    ).distinct()
+
+
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -66,8 +74,7 @@ class TeamViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'created_at']
 
     def get_queryset(self):
-        user = self.request.user
-        return self.queryset.filter(members=user).distinct()
+        return _user_teams(self.request.user)
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -183,15 +190,16 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        user_teams = _user_teams(user)
         return self.queryset.filter(
-            Q(team__in=user.teams.all()) |
+            Q(team__in=user_teams) |
             Q(team__isnull=True, responsible=user)
         ).distinct()
 
     def get_serializer_class(self):
         if self.action == 'list':
             return TaskListSerializer
-        if self.action == 'create':
+        if self.action in ('create', 'update', 'partial_update'):
             return TaskCreateSerializer
         return TaskDetailSerializer
 
@@ -275,10 +283,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ordering_fields = ['deadline', 'created_at', 'status']
 
     def get_queryset(self):
-        user = self.request.user
-        return self.queryset.filter(
-            team__in=user.teams.all()
-        ).distinct()
+        return self.queryset.filter(team__in=_user_teams(self.request.user)).distinct()
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -349,7 +354,7 @@ class CalendarEventViewSet(viewsets.ModelViewSet):
 def dashboard_stats(request):
     today = timezone.now().date()
 
-    user_teams = request.user.teams.filter(is_active=True).distinct()
+    user_teams = _user_teams(request.user)
 
     visible_tasks = Task.objects.filter(
         Q(responsible=request.user) | Q(team__in=user_teams)
@@ -395,6 +400,75 @@ def dashboard_stats(request):
     return Response(data)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_team_stats(request):
+    """Get team statistics for the authenticated user"""
+    user_teams = _user_teams(request.user).filter(is_active=True)
+    
+    teams_data = []
+    overall_team_total = 0
+    overall_team_completed = 0
+    
+    for team in user_teams:
+        total_tasks = team.tasks.count()
+        completed_tasks = team.tasks.filter(is_completed=True).count()
+        progress_percent = _safe_percent(completed_tasks, total_tasks)
+        
+        overall_team_total += total_tasks
+        overall_team_completed += completed_tasks
+        
+        # Build member list
+        members = []
+        team_lead = team.team_lead
+        
+        # Add team lead first
+        try:
+            avatar_url = team_lead.profile.avatar or ''
+        except ObjectDoesNotExist:
+            avatar_url = ''
+        
+        members.append({
+            'id': team_lead.id,
+            'username': team_lead.username,
+            'avatar_url': avatar_url,
+            'is_lead': True,
+        })
+        
+        # Add other members
+        for member in team.members.all():
+            if member.id != team_lead.id:
+                try:
+                    avatar_url = member.profile.avatar or ''
+                except ObjectDoesNotExist:
+                    avatar_url = ''
+                
+                members.append({
+                    'id': member.id,
+                    'username': member.username,
+                    'avatar_url': avatar_url,
+                    'is_lead': False,
+                })
+        
+        teams_data.append({
+            'id': team.id,
+            'name': team.name,
+            'total_tasks': total_tasks,
+            'completed_tasks': completed_tasks,
+            'progress_percent': progress_percent,
+            'members': members,
+        })
+    
+    overall_team_progress = _safe_percent(overall_team_completed, overall_team_total)
+    
+    return Response({
+        'teams': teams_data,
+        'overall_team_total': overall_team_total,
+        'overall_team_completed': overall_team_completed,
+        'overall_team_progress': overall_team_progress,
+    })
+
+
 def _safe_percent(completed, total):
     if total == 0:
         return 0
@@ -402,7 +476,7 @@ def _safe_percent(completed, total):
 
 
 def _dashboard_context(user):
-    user_teams = user.teams.filter(is_active=True).order_by('name')
+    user_teams = _user_teams(user).order_by('name')
     visible_tasks = Task.objects.filter(
         Q(responsible=user) | Q(team__in=user_teams)
     ).distinct()
@@ -480,7 +554,7 @@ def dashboard_create_task(request):
 
     selected_team = None
     if team_id:
-        selected_team = request.user.teams.filter(id=team_id, is_active=True).first()
+        selected_team = _user_teams(request.user).filter(id=team_id).first()
         if selected_team is None:
             messages.error(request, 'You can only create team tasks inside your teams.')
             return redirect('dashboard-ui')
@@ -507,7 +581,7 @@ def dashboard_create_task(request):
 @login_required
 @require_POST
 def dashboard_toggle_task(request, task_id):
-    user_teams = request.user.teams.filter(is_active=True)
+    user_teams = _user_teams(request.user)
     task = get_object_or_404(
         Task.objects.filter(Q(responsible=request.user) | Q(team__in=user_teams)).distinct(),
         pk=task_id,
@@ -544,7 +618,8 @@ def join_team(request, invite_code):
     if request.user.is_authenticated:
         team.members.add(request.user)
         messages.success(request, f'You joined "{team.name}" successfully.')
-        return redirect('team-detail', team_id=team.id)
+        join_query = urlencode({'invite_code': team.invite_code, 'name': team.name})
+        return redirect(f"/join/team/{team.id}?{join_query}")
 
     store_invite_code(request, str(invite_code))
     next_path = f"/join/team/{team.id}?invite_code={team.invite_code}"
